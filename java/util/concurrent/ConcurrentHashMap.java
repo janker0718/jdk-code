@@ -98,105 +98,170 @@ import java.util.stream.Stream;
  * block, so may overlap with update operations (including {@code put}
  * 所以可能与更新操作重叠(包括{@code put}和{@code remove})
  * and {@code remove}). Retrievals reflect the results of the most
+ * 检索 反映了在他们开始
  * recently <em>completed</em> update operations holding upon their
+ * 最近完成更新操作的结果
  * onset. (More formally, an update operation for a given key bears a
+ * 更正式的说，一个给定键的更新操作将在与任何(非空)检索之间发生的关系之前发生，
  * <em>happens-before</em> relation with any (non-null) retrieval for
+ *
  * that key reporting the updated value.)  For aggregate operations
+ *                                         对于像 {@code putAll} 和
  * such as {@code putAll} and {@code clear}, concurrent retrievals may
+ * {@code clear} 这样的聚合操作，并发检索 可能
  * reflect insertion or removal of only some entries.  Similarly,
+ * 影响插入或删除某些条目。同样的，
  * Iterators, Spliterators and Enumerations return elements reflecting the
+ * 迭代器 slit迭代器 和 枚举返回元素，它们反映了
  * state of the hash table at some point at or since the creation of the
+ * 在迭代器/枚举的创建过程中某个时刻的哈希表状态。
  * iterator/enumeration.  They do <em>not</em> throw {@link
  * java.util.ConcurrentModificationException ConcurrentModificationException}.
+ * 他们不会抛出并发修改异常
  * However, iterators are designed to be used by only one thread at a time.
+ * 然而，迭代器被设计为一次只使用一个线程。
  * Bear in mind that the results of aggregate status methods including
+ * 记住，聚合状态方法的结果，
  * {@code size}, {@code isEmpty}, and {@code containsValue} are typically
+ * 包括{@code size}、{@code isEmpty}和{@code containsValue}，
  * useful only when a map is not undergoing concurrent updates in other threads.
+ * 通常只有在其他线程没有并发更新的情况下才有用。
  * Otherwise the results of these methods reflect transient states
+ * 否则，这些方法的结果反映了可能足以用于监测或估计目的的瞬态状态，
  * that may be adequate for monitoring or estimation purposes, but not
  * for program control.
- *
+ * 但不是为了程序控制。
  * <p>The table is dynamically expanded when there are too many
+ * 当有太多的冲突时，表被动态地扩展。
  * collisions (i.e., keys that have distinct hash codes but fall into
+ * 键具有不同的哈希码，但会掉入相同的槽模中。
  * the same slot modulo the table size), with the expected average
+ *                                         按照预期的平均
  * effect of maintaining roughly two bins per mapping (corresponding
+ * 效果，每个映射维护大约两个容器。
  * to a 0.75 load factor threshold for resizing). There may be much
+ * 对应于0.75的调整负荷系数阈值
  * variance around this average as mappings are added and removed, but
+ * 当添加和删除映射的时候，可能会有很大差异。
  * overall, this maintains a commonly accepted time/space tradeoff for
+ * 但是总的来说，这为哈希表维护了一个普遍接受的时间/空间权衡。
  * hash tables.  However, resizing this or any other kind of hash
+ * 然后调整这个或任何其他类型的哈希表
  * table may be a relatively slow operation. When possible, it is a
+ * 可能是一个相对缓慢的操作。在可能的情况下，
  * good idea to provide a size estimate as an optional {@code
+ * 提供一个大小评估作为可选的{@code initialCapacity}构造函数参数是一个好的想法。
  * initialCapacity} constructor argument. An additional optional
- * {@code loadFactor} constructor argument provides a further means of
- * customizing initial table capacity by specifying the table density
- * to be used in calculating the amount of space to allocate for the
- * given number of elements.  Also, for compatibility with previous
- * versions of this class, constructors may optionally specify an
- * expected {@code concurrencyLevel} as an additional hint for
- * internal sizing.  Note that using many keys with exactly the same
- * {@code hashCode()} is a sure way to slow down performance of any
- * hash table. To ameliorate impact, when keys are {@link Comparable},
- * this class may use comparison order among keys to help break ties.
  *
+ * {@code loadFactor} constructor argument provides a further means of
+ * 一个附加的可选的{@code loadFactor}构造函数参数提供了一种进一步的方法，
+ * customizing initial table capacity by specifying the table density
+ * 通过指定表密度来定制初始表容量，
+ * to be used in calculating the amount of space to allocate for the
+ * 以计算分配给给定数量的元素的空间数量。
+ * given number of elements.  Also, for compatibility with previous
+ *                            另外，为了与这个类的以前版本兼容，
+ * versions of this class, constructors may optionally specify an
+ * 构造函数可以选择指定一个期望的
+ * expected {@code concurrencyLevel} as an additional hint for
+ * {@code concurrencyLevel}作为内部规模的附加提示。
+ * internal sizing.  Note that using many keys with exactly the same
+ *                      请注意， 使用许多具有完全相同{@code hashCode()}的键
+ * {@code hashCode()} is a sure way to slow down performance of any
+ * 会降低任何哈希表的性能。
+ * hash table. To ameliorate impact, when keys are {@link Comparable},
+ * 为了改善影响，当键是{@link Comparable}时，
+ * this class may use comparison order among keys to help break ties.
+ * 这个类可以使用键之间的比较顺序来帮助断开连接。
  * <p>A {@link Set} projection of a ConcurrentHashMap may be created
  * (using {@link #newKeySet()} or {@link #newKeySet(int)}), or viewed
  * (using {@link #keySet(Object)} when only keys are of interest, and the
  * mapped values are (perhaps transiently) not used or all take the
  * same mapping value.
- *
+ * 一个ConcurrentHashMap的投影，当只有键值时可以被(使用{@link #newKeySet()}或{@link #newKeySet(int)})创建
+ * 或者((使用{@link #keySet(Object)})被查看。并且被映射的值(可能是暂时的)没有使用或都具有相同的映射值。
  * <p>A ConcurrentHashMap can be used as scalable frequency map (a
+ * ConcurrentHashMap可以通过使用值和初始化值用作可伸缩频率图(柱状图的形式或多重集)
  * form of histogram or multiset) by using {@link
  * java.util.concurrent.atomic.LongAdder} values and initializing via
  * {@link #computeIfAbsent computeIfAbsent}. For example, to add a count
+ * 例如，要将一个计数添加到{@code ConcurrentHashMap freqs}
  * to a {@code ConcurrentHashMap<String,LongAdder> freqs}, you can use
+ * 你可以使用
+ * {@code freqs.computeIfAbsent(k -> new LongAdder()).increment();}
  * {@code freqs.computeIfAbsent(k -> new LongAdder()).increment();}
  *
  * <p>This class and its views and iterators implement all of the
+ * 这个类及其视图和迭代器实现map和迭代器接口的所有操作方法
  * <em>optional</em> methods of the {@link Map} and {@link Iterator}
  * interfaces.
  *
  * <p>Like {@link Hashtable} but unlike {@link HashMap}, this class
+ * 像hashTable但是不想hashMap，这个类
  * does <em>not</em> allow {@code null} to be used as a key or value.
- *
+ * 不允许空值作为键或值
  * <p>ConcurrentHashMaps support a set of sequential and parallel bulk
+ * ConcurrentHashMaps支持一组序列和并行的批量操作
  * operations that, unlike most {@link Stream} methods, are designed
+ * 与大多数{@link Stream}方法不同，它们被设计为安全的，
  * to be safely, and often sensibly, applied even with maps that are
+ * 并且通常是明智的，即使是与正在
  * being concurrently updated by other threads; for example, when
+ * 被其他线程并发更新的映射一起使用。 例如，
  * computing a snapshot summary of the values in a shared registry.
+ * 也可以计算共享注册表中的值的快照汇总
  * There are three kinds of operation, each with four forms, accepting
+ * 有三种操作，每一种都有四种形式
  * functions with Keys, Values, Entries, and (Key, Value) arguments
+ * 分别接受键、值、项和(键、值)参数和/或返回值的函数。
  * and/or return values. Because the elements of a ConcurrentHashMap
+ * 因为ConcurrentHashMap的元素
  * are not ordered in any particular way, and may be processed in
+ * 没有以任何特定的方式排序。
  * different orders in different parallel executions, the correctness
+ * 可以在不同的并行执行中处理不同的顺序，
  * of supplied functions should not depend on any ordering, or on any
+ * 提供的函数的正确性不应依赖于任何排序，
  * other objects or values that may transiently change while
+ * 在计算正在进行时，可能会发生变化的任何其他对象或值
  * computation is in progress; and except for forEach actions, should
+ * 除了循环动作 理想情况下应该没有副作用
  * ideally be side-effect-free. Bulk operations on {@link java.util.Map.Entry}
+ * 在{@link java.util.Map.Entry}上进行批量操作，对象不支持方法{@code setValue}。
  * objects do not support method {@code setValue}.
  *
  * <ul>
  * <li> forEach: Perform a given action on each element.
+ *  forEach: 对每个元素执行一个给定的操作。
  * A variant form applies a given transformation on each element
+ * 在执行操作之前，一个变体形式在每个元素上应用一个给定的转换。
  * before performing the action.</li>
  *
  * <li> search: Return the first available non-null result of
+ *  search: 返回在每个元素上应用给定函数的第一个可用的非空结果。
  * applying a given function on each element; skipping further
  * search when a result is found.</li>
- *
+ * 在找到结果时跳过进一步的搜索。
  * <li> reduce: Accumulate each element.  The supplied reduction
+ * 减少：积累每个元素
  * function cannot rely on ordering (more formally, it should be
+ * 所提供的还原函数不能依赖于排序(更正式地说，它应该是关联的和可交换的)
  * both associative and commutative).  There are five variants:
- *
+ * 有五种变体:
  * <ul>
  *
  * <li> Plain reductions. (There is not a form of this method for
+ *  普通的减少. 由于没有相应的返回类型
  * (key, value) function arguments since there is no corresponding
+ * ，所以没有这种方法用于(键、值)函数参数。
  * return type.)</li>
  *
  * <li> Mapped reductions that accumulate the results of a given
+ * 将给定函数的结果累积到每个元素上的映射减少。
  * function applied to each element.</li>
  *
  * <li> Reductions to scalar doubles, longs, and ints, using a
+ * 使用给定的基础值，减少到标量doubles、longs和ints。
  * given basis value.</li>
  *
  * </ul>
